@@ -1,0 +1,42 @@
+INSTALLATION FIELD REPORT — RAW NOTES
+Technician: Marco Bianchi
+Date: March 18, 2026
+Location: Studio Oculistico Verdi, Via Roma 45, Torino
+
+Arrived on site 9:15am, was supposed to be 9am but traffic on tangenziale was terrible.
+
+Client: Dr. Elena Verdi, small practice, 2 exam rooms. Very nice, offered coffee.
+
+DEVICE 1 — BrightEyes RetinaScan Pro (S/N: BRS-2026-00847)
+- Unpacked, no visible shipping damage
+- Installed in exam room 1, had to move the old slit lamp to make space
+- Power connection fine, using the wall socket behind the desk
+- Calibration: ran auto-calibration 3 times, first 2 failed because room was too bright. Closed the blinds, third attempt OK.
+- Connected to their PC via USB-C, driver installed automatically on Windows 11
+- DICOM export tested — works but their PACS system (OphthaPACS v3.2) needed a config change on port 4242
+- Patient test capture: Dr. Verdi tested on her assistant, image quality rated "excellent" by the doctor
+- One issue: the chin rest height adjustment is a bit stiff. Applied silicone lubricant, now smooth. Noted for QA.
+
+DEVICE 2 — BrightEyes AutoRef 500 (S/N: BAR-2026-01203)  
+- Installed in exam room 2
+- Setup straightforward, took about 30 mins
+- Connected to same PC network
+- Italian language pack was not pre-loaded! Had to download it on site, took 15 min on their slow wifi. NOTE TO OFFICE: please pre-load Italian language pack before shipping to Italian clients!!!
+- Measurement accuracy test: compared 5 readings with their existing manual refractometer, all within ±0.25D. Dr. Verdi happy.
+- Small scratch on the device base — was there from factory, not shipping. Took photo. Client accepted it but noted for future QA.
+
+TRAINING:
+- Spent 45 mins training Dr. Verdi and her assistant Maria on both devices
+- They picked it up quickly, very tech-savvy
+- Left the quick-start guide (Italian version)
+- Dr. Verdi asked about the AI screening module — told her it's coming in Q3 2026 update. She's very interested.
+
+ISSUES TO REPORT:
+1. Chin rest stiffness on RetinaScan Pro S/N BRS-2026-00847 — mechanical, fixed on site
+2. Missing Italian language pack on AutoRef 500 — process issue
+3. Scratch on AutoRef 500 base S/N BAR-2026-01203 — factory QC issue
+
+Left site at 1:45pm. Total time on site: 4.5 hours.
+Client signed acceptance form. Scan attached.
+
+Overall: smooth installation, happy client. Dr. Verdi wants to discuss a second RetinaScan for her satellite office in Moncalieri.

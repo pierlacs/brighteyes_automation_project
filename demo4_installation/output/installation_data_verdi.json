@@ -1,0 +1,117 @@
+{
+  "technician_name": "Marco Bianchi",
+  "date": "2026-03-18",
+  "client_name": "Dr. Elena Verdi",
+  "client_org": "Studio Oculistico Verdi",
+  "location": "Studio Oculistico Verdi, Via Roma 45, Torino",
+  "address": "Via Roma 45, Torino",
+  "arrived_time": "09:15",
+  "left_time": "13:45",
+  "total_time_on_site_hours": 4.5,
+  "devices": [
+    {
+      "device_number": 1,
+      "product_name": "BrightEyes RetinaScan Pro",
+      "serial_number": "BRS-2026-00847",
+      "status": "installed",
+      "notes": [
+        "Unpacked, no visible shipping damage",
+        "Installed in exam room 1, had to move the old slit lamp to make space",
+        "Power connection fine, using the wall socket behind the desk",
+        "Calibration: ran auto-calibration 3 times, first 2 failed because room was too bright. Closed the blinds, third attempt OK.",
+        "Connected to their PC via USB-C, driver installed automatically on Windows 11",
+        "DICOM export tested — works but their PACS system (OphthaPACS v3.2) needed a config change on port 4242",
+        "Patient test capture: Dr. Verdi tested on her assistant, image quality rated \"excellent\" by the doctor",
+        "One issue: the chin rest height adjustment is a bit stiff. Applied silicone lubricant, now smooth. Noted for QA."
+      ]
+    },
+    {
+      "device_number": 2,
+      "product_name": "BrightEyes AutoRef 500",
+      "serial_number": "BAR-2026-01203",
+      "status": "installed",
+      "notes": [
+        "Installed in exam room 2",
+        "Setup straightforward, took about 30 mins",
+        "Connected to same PC network",
+        "Italian language pack was not pre-loaded! Had to download it on site, took 15 min on their slow wifi. NOTE TO OFFICE: please pre-load Italian language pack before shipping to Italian clients!!!",
+        "Measurement accuracy test: compared 5 readings with their existing manual refractometer, all within ±0.25D. Dr. Verdi happy.",
+        "Small scratch on the device base — was there from factory, not shipping. Took photo. Client accepted it but noted for future QA.",
+        "Spent 45 mins training Dr. Verdi and her assistant Maria on both devices",
+        "They picked it up quickly, very tech-savvy",
+        "Left the quick-start guide (Italian version)",
+        "Dr. Verdi asked about the AI screening module — told her it's coming in Q3 2026 update. She's very interested."
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "title": "Chin rest stiffness on RetinaScan Pro S/N BRS-2026-00847 — mechanical, fixed on site",
+      "category": "Mechanical",
+      "severity": "LOW",
+      "routed_team": "Engineering",
+      "device_serial_number": "BRS-2026-00847",
+      "was_fixed_on_site": true,
+      "evidence": [
+        "Chin rest stiffness on RetinaScan Pro S/N BRS-2026-00847 — mechanical, fixed on site"
+      ]
+    },
+    {
+      "title": "Missing Italian language pack on AutoRef 500 — process issue",
+      "category": "Process",
+      "severity": "MEDIUM",
+      "routed_team": "Operations",
+      "device_serial_number": null,
+      "was_fixed_on_site": null,
+      "evidence": [
+        "Missing Italian language pack on AutoRef 500 — process issue"
+      ]
+    },
+    {
+      "title": "Scratch on AutoRef 500 base S/N BAR-2026-01203 — factory QC issue",
+      "category": "Quality Control",
+      "severity": "MEDIUM",
+      "routed_team": "QA",
+      "device_serial_number": "BAR-2026-01203",
+      "was_fixed_on_site": null,
+      "evidence": [
+        "Scratch on AutoRef 500 base S/N BAR-2026-01203 — factory QC issue"
+      ]
+    },
+    {
+      "title": "PACS/DICOM integration required a configuration change (port 4242).",
+      "category": "Software",
+      "severity": "LOW",
+      "routed_team": "R&D",
+      "device_serial_number": "BRS-2026-00847",
+      "was_fixed_on_site": true,
+      "evidence": [
+        "DICOM export tested — works but PACS needed a config change on port 4242."
+      ]
+    }
+  ],
+  "sales_opportunities": [
+    {
+      "opportunity": "Follow up on AI screening module interest (planned Q3 2026 update).",
+      "confidence": "MEDIUM",
+      "evidence": [
+        "Dr. Verdi asked about the AI screening module and expressed strong interest."
+      ]
+    },
+    {
+      "opportunity": "Upsell opportunity: second RetinaScan Pro for the client’s satellite office (Moncalieri).",
+      "confidence": "HIGH",
+      "evidence": [
+        "Client wants to discuss a second RetinaScan for her satellite office in Moncalieri."
+      ]
+    }
+  ],
+  "client_satisfaction": "POSITIVE",
+  "satisfaction_rationale": [
+    "Positive language in notes.",
+    "Acceptance signed / issues accepted.",
+    "Minor issues were present but did not block acceptance."
+  ],
+  "raw_source_file": "/Users/piergiorgioscalia/Desktop/ESCP/data cloud enterprise ai/brighteyes_v2/demo4_installation/data/field_notes_verdi.txt",
+  "generated_at": "2026-03-25T18:07:32"
+}
