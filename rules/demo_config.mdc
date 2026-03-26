@@ -1,0 +1,58 @@
+---
+description: BrightEyes demo output configuration — update this file via Cursor prompt to change demo behavior
+globs: ["demo*/**/*.py", "dashboard.py"]
+---
+
+# BrightEyes — Demo Output Configuration
+
+This file controls presentation and output preferences across all 5 demos.
+Ask Cursor to update specific values here when requirements change.
+
+## Presentation settings
+OUTPUT_LANGUAGE: English
+TERMINAL_EMOJIS_ENABLED: true
+REPORT_INCLUDE_SUMMARY_TABLE: true
+REPORT_INCLUDE_SCORING_WEIGHTS: true
+
+## Demo 1 — Tender Parser
+TENDER_ELIGIBILITY_MIN_EXPERIENCE_YEARS: 3
+TENDER_ELIGIBILITY_MIN_REVENUE_EUR: 500000
+TENDER_FLAG_CE_RISK: true
+TENDER_FLAG_REFERENCE_RISK: true
+TENDER_OUTPUT_DOCX: true
+
+## Demo 2 — Proposal Generator
+PROPOSAL_LEASING_MONTHS: 36
+PROPOSAL_LEASING_MONTHLY_RATE_PCT: 2.8
+PROPOSAL_BUNDLE_DISCOUNT_2_ITEMS_PCT: 5
+PROPOSAL_BUNDLE_DISCOUNT_3PLUS_ITEMS_PCT: 8
+PROPOSAL_CLIENT_BUDGET_CEILING_EUR: 150000
+PROPOSAL_INCLUDE_ROI_SECTION: true
+
+## Demo 3 — Supplier Analysis
+SUPPLIER_RISK_HIGH_QUALITY_THRESHOLD: 3.5
+SUPPLIER_RISK_MEDIUM_QUALITY_THRESHOLD: 4.0
+SUPPLIER_RISK_ISSUE_COUNT_THRESHOLD: 2
+SUPPLIER_SAVINGS_TARGET_PCT: 5
+SUPPLIER_SORT_BY: total_spend_desc
+
+## Demo 4 — Installation Report
+INSTALLATION_ISSUE_ROUTE_QA: ["scratch", "quality", "defect"]
+INSTALLATION_ISSUE_ROUTE_RD: ["software", "firmware", "update", "driver"]
+INSTALLATION_ISSUE_ROUTE_OPS: ["language", "pack", "process", "pre-load"]
+INSTALLATION_ISSUE_ROUTE_ENG: ["mechanical", "stiff", "loose", "calibration"]
+INSTALLATION_EXPORT_JSON: true
+
+## Demo 5 — WBR Generator
+WBR_ALERT_REVENUE_DROP_PCT: 20
+WBR_ALERT_TICKET_SPIKE_PCT: 20
+WBR_ALERT_CSAT_MINIMUM: 4.0
+WBR_NARRATIVE_INCLUDE_TREND: true
+WBR_ACTION_ITEMS_INCLUDE_OWNERS: true
+WBR_TRADE_SHOW_WEEKS: ["W6", "W10"]
+
+## Dashboard
+DASHBOARD_PRIMARY_COLOR: "#00B4D8"
+DASHBOARD_DARK_COLOR: "#1E3A5F"
+DASHBOARD_DEFAULT_WEEK_RANGE_START: 1
+DASHBOARD_DEFAULT_WEEK_RANGE_END: 12

@@ -1,0 +1,54 @@
+---
+description: BrightEyes project rules — applied to all files in this workspace
+globs: ["**/*.py", "**/*.md"]
+---
+
+# BrightEyes — Cursor Project Rules
+
+## Project context
+BrightEyes is a Paris-based startup selling ophthalmic diagnostic devices
+(retinal cameras, OCTs, autorefractors) to hospitals and clinics across Europe.
+This project is a group demo suite (Group E) showing how AI can automate 5
+key workflows: tender parsing, proposal generation, supplier analysis,
+installation reporting, and weekly business review.
+
+## Code style rules
+- All Python output (terminal prints, Markdown reports, JSON exports) must be in **English**
+- Use emojis in terminal output for scannability (✅ ⚠️ 🔴 🟢 📄 📊)
+- Every function must have a one-line docstring
+- All file paths must use `Path(__file__).parent` — never hardcode absolute paths
+- Handle missing files with `st.warning()` in dashboard, `print()` in scripts
+
+## Output rules
+- Markdown reports go to `output/` subfolder of each demo
+- JSON exports must be valid and machine-readable (no trailing commas)
+- All prices in EUR, formatted as €X,XXX
+
+## Alert thresholds (edit this section manually to change script behavior)
+# ─────────────────────────────────────────────────────────────────────────────
+# MANUALLY EDITABLE PARAMETERS — changing these values here is the trigger to
+# also update the matching constant in the corresponding Python script.
+#
+#   WBR alert threshold:      20%   → demo5_wbr/wbr_generator.py  line ~WOW_ALERT_THRESHOLD
+#   Supplier HIGH risk cutoff: 3.5  → demo3_supplier/supplier_analysis.py  line ~AVG_QUALITY_HIGH
+#   Supplier MEDIUM cutoff:    4.0  → demo3_supplier/supplier_analysis.py  line ~AVG_QUALITY_MEDIUM
+#   Bundle discount (2 items): 5%   → demo2_proposal/proposal_generator.py line ~DISCOUNT_2
+#   Bundle discount (3+ items): 8%  → demo2_proposal/proposal_generator.py line ~DISCOUNT_3
+#   Leasing term (months):    36    → demo2_proposal/proposal_generator.py line ~LEASING_MONTHS
+# ─────────────────────────────────────────────────────────────────────────────
+WBR_ALERT_THRESHOLD_PCT: 20
+SUPPLIER_HIGH_RISK_QUALITY_CUTOFF: 3.5
+SUPPLIER_MEDIUM_RISK_QUALITY_CUTOFF: 4.0
+BUNDLE_DISCOUNT_2_ITEMS_PCT: 5
+BUNDLE_DISCOUNT_3PLUS_ITEMS_PCT: 8
+LEASING_TERM_MONTHS: 36
+
+## Naming conventions
+- Demo scripts: `demo{N}_{name}/{name}.py`
+- Output files: `{descriptor}_{identifier}.{md|json|docx}`
+- Data files: stay in `data/` subfolder, never modified by scripts
+
+## What NOT to do
+- Never call external APIs (all demos are rule-based unless explicitly upgraded)
+- Never overwrite input files in `data/`
+- Never use `print()` for errors in dashboard.py — use `st.warning()` or `st.error()`

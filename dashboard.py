@@ -134,7 +134,7 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-    tabs = ["Overview", "Commercial Automation", "Supplier Intelligence", "Installation Intelligence", "Weekly Business Review"]
+    tabs = ["Overview", "Pipeline", "Supply Chain", "Installations", "Weekly Report"]
 
     # Store selection in session state under the exact key requested.
     st.radio("Navigation", tabs, key="tab")
@@ -563,63 +563,266 @@ if tab == "Overview":
 """,
             unsafe_allow_html=True,
         )
-elif tab == "Commercial Automation":
-    # ──────────────────────────────────────────────────────────────────────────
-    # COMMERCIAL AUTOMATION — Tender to Proposal
-    # Shows the end-to-end AI-assisted workflow for a single commercial
-    # opportunity: from tender qualification (Demo 1) to proposal generation
-    # (Demo 2). All metrics on this page are case-level, not YTD aggregates.
-    # ──────────────────────────────────────────────────────────────────────────
+elif tab == "Pipeline":
+    # ─────────────────────────────────────────────────────────────────────────
+    # PIPELINE — Tender Qualification (Demo 1) + Proposal Generation (Demo 2)
+    # This page covers the full commercial workflow for a single opportunity.
+    # Section 1: Tender analysis — qualifying a public hospital procurement.
+    # Section 2: Proposal generation — pricing a private clinic deal.
+    # All data is case-level. No YTD aggregates on this page.
+    # ─────────────────────────────────────────────────────────────────────────
 
-    st.markdown("## Commercial Automation")
+    import re as _re
+
+    st.markdown("## Pipeline — Tender to Proposal")
     st.markdown(
-        '<div style="color:rgba(0,0,0,0.45); margin-top:-0.25rem; margin-bottom:1rem; font-size:0.95rem;">'
-        "From tender qualification to proposal generation — one opportunity, end-to-end"
-        "</div>",
+        '''<div style="color:rgba(0,0,0,0.45);margin-top:-0.25rem;margin-bottom:0.5rem;font-size:0.95rem;">
+        Two AI demos, one commercial workflow — from public tender qualification to private clinic proposal
+        </div>''',
         unsafe_allow_html=True,
     )
 
-    # ── Load outputs from Demo 1 (tender) and Demo 2 (proposal) ───────────────
+    # ── Load output files ─────────────────────────────────────────────────────
     tender_path   = Path(__file__).parent / "demo1_tender/output/tender_analysis_TENDER-2026-OPH-0187.md"
     proposal_path = Path(__file__).parent / "demo2_proposal/output/proposal_Clinica_Oculistica_Milano.md"
     tender_text   = tender_path.read_text(encoding="utf-8")   if tender_path.exists()   else ""
     proposal_text = proposal_path.read_text(encoding="utf-8") if proposal_path.exists() else ""
 
-    # ── Derive case-level facts from the tender output ────────────────────────
-    # Tender ID comes from the filename and is confirmed in the report header.
+    # ── Parse tender facts ────────────────────────────────────────────────────
     TENDER_ID = "TENDER-2026-OPH-0187"
 
-    # Buyer: extracted from the tender analysis report (line starting with "Buyer").
-    import re as _re
     _buyer_m = _re.search(r"\*\*Buyer\*\*[:\s]+(.+)", tender_text)
     TENDER_BUYER = _buyer_m.group(1).strip() if _buyer_m else "Ospedale Policlinico di Milano"
 
-    # Budget: the tender states an estimated budget per lot; we use the text as-is.
     _budget_m = _re.search(r"\*\*Budget[^*]*\*\*[:\s]+(.+)", tender_text)
     TENDER_BUDGET_TEXT = _budget_m.group(1).strip() if _budget_m else "See tender conditions"
 
-    # Verdict: look for "GO_WITH_RISKS", "NO_GO", or "GO" in the report.
-    if "GO_WITH_RISKS" in tender_text:
-        VERDICT = "GO_WITH_RISKS"
-        VERDICT_COLOR = "#FFC300"
-    elif "NO_GO" in tender_text:
-        VERDICT = "NO_GO"
-        VERDICT_COLOR = "#E74C3C"
-    elif tender_text:
-        VERDICT = "GO"
-        VERDICT_COLOR = "#2ECC71"
-    else:
-        VERDICT = "—"
-        VERDICT_COLOR = "#888888"
+    _deadline_m = _re.search(r"\*\*Submission deadline\*\*[:\s]+(.+)", tender_text)
+    TENDER_DEADLINE = _deadline_m.group(1).strip() if _deadline_m else "See tender"
 
-    # Count RISK items in the tender report (lines containing "RISK:").
+    if "GO_WITH_RISKS" in tender_text:
+        VERDICT, VERDICT_COLOR = "GO_WITH_RISKS", "#FFC300"
+    elif "NO_GO" in tender_text:
+        VERDICT, VERDICT_COLOR = "NO_GO", "#E74C3C"
+    elif tender_text:
+        VERDICT, VERDICT_COLOR = "GO", "#2ECC71"
+    else:
+        VERDICT, VERDICT_COLOR = "—", "#888888"
+
     RISK_COUNT = len(_re.findall(r"RISK:", tender_text, _re.IGNORECASE))
 
-    # ── Proposal toggle (core vs. full bundle) — case-level pricing ───────────
-    # Source: Demo 2 proposal generator output.
-    # Core bundle (RetinaScan + OCT, 2 products) → 5% discount applied.
-    # Full bundle (+ 2× AutoRef, 3+ products) → 8% discount applied.
-    # List prices from company_context.md: RetinaScan €38k, OCT €62k, AutoRef €12k each.
+    # ── Shared card helper ────────────────────────────────────────────────────
+    def _card(label: str, value: str, subtitle: str,
+              border: str = "#00B4D8", val_color: str = "#1E3A5F") -> None:
+        st.markdown(
+            f"""<div style="border:1px solid rgba(0,0,0,0.07);border-top:4px solid {border};
+border-radius:12px;padding:14px 16px 12px;background:white;
+box-shadow:0 2px 12px rgba(0,0,0,0.06);height:100%;">
+  <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+              color:rgba(0,0,0,0.38);margin-bottom:5px;">{label}</div>
+  <div style="font-size:1.35rem;font-weight:800;color:{val_color};line-height:1.15;">{value}</div>
+  <div style="font-size:0.76rem;color:rgba(0,0,0,0.4);margin-top:4px;">{subtitle}</div>
+</div>""",
+            unsafe_allow_html=True,
+        )
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 1 — TENDER QUALIFICATION  (Demo 1)
+    # A public hospital published a procurement tender. Demo 1 reads it and
+    # checks whether BrightEyes is eligible to bid and what the risks are.
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown(
+        """<div style="background:linear-gradient(90deg,#1E3A5F 0%,#2a4f7c 100%);
+border-radius:10px;padding:14px 20px;margin:0.5rem 0 1rem;">
+  <div style="color:white;font-weight:800;font-size:1.05rem;letter-spacing:0.01em;">
+    📋 Section 1 — Tender Qualification &nbsp;
+    <span style="font-size:0.78rem;font-weight:500;opacity:0.7;">Demo 1 · tender_parser.py</span>
+  </div>
+  <div style="color:rgba(255,255,255,0.65);font-size:0.82rem;margin-top:3px;">
+    A public hospital published a legal procurement document (tender).
+    The AI reads it, checks BrightEyes\' eligibility, flags risks, and recommends a bid strategy.
+  </div>
+</div>""",
+        unsafe_allow_html=True,
+    )
+
+    # Row 1a — Tender summary cards (stable, not affected by proposal toggle)
+    t1, t2, t3, t4 = st.columns(4)
+    with t1:
+        _card("Tender Reference", TENDER_ID[-11:], "Public procurement ID", border="#1E3A5F")
+    with t2:
+        buyer_short = TENDER_BUYER[:26] + ("…" if len(TENDER_BUYER) > 26 else "")
+        _card("Issuing Hospital", buyer_short, "Milan, Lombardy — Italy", border="#1E3A5F")
+    with t3:
+        _card("Submission Deadline", TENDER_DEADLINE, "Hard legal deadline", border="#FFC300", val_color="#E67E22")
+    with t4:
+        _card("Eligibility Verdict", VERDICT,
+              f"{RISK_COUNT} risk item(s) to resolve before bidding",
+              border=VERDICT_COLOR, val_color=VERDICT_COLOR)
+
+    st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
+
+    # Row 1b — Workflow stepper (left) + Risk blockers (right)
+    wf_col, risk_col = st.columns([3, 2])
+
+    with wf_col:
+        st.markdown("#### Workflow Progress")
+        st.markdown(
+            '''<div style="font-size:0.8rem;color:rgba(0,0,0,0.42);margin-top:-0.3rem;margin-bottom:0.9rem;">
+            Each step is inferred from the actual output files — not hardcoded labels
+            </div>''',
+            unsafe_allow_html=True,
+        )
+
+        has_tender  = bool(tender_text)
+        has_verdict = VERDICT != "—"
+        has_risks   = RISK_COUNT > 0
+        has_rec     = VERDICT in ("GO", "GO_WITH_RISKS", "NO_GO")
+        has_proposal = bool(proposal_text)
+        submission_ready = has_proposal and VERDICT != "NO_GO" and RISK_COUNT == 0
+
+        steps = [
+            ("Tender received",      has_tender,      "Demo 1 input: tender_hospital_milan.md loaded"),
+            ("Eligibility checked",  has_verdict,     f"Verdict: {VERDICT} — revenue & experience reviewed"),
+            ("Risks identified",     has_risks,       f"{RISK_COUNT} risk item(s) extracted from tender text"),
+            ("Bid recommendation",   has_rec,         "Go/No-Go decision produced by parser"),
+            ("Proposal generated",   has_proposal,    "Demo 2 output: proposal_Clinica_Oculistica_Milano.md"),
+            ("Submission ready",     submission_ready,
+             "All clear — ready to submit" if submission_ready else "⚠️ Open risks must be resolved first"),
+        ]
+
+        html = '<div style="padding-left:4px;">' 
+        for i, (lbl, done, detail) in enumerate(steps):
+            if done:
+                dot_bg = "#2ECC71"; char = "✓"; lc = "#1E3A5F"; dc = "rgba(0,0,0,0.48)"
+            elif i > 0 and steps[i-1][1]:
+                dot_bg = "#FFC300"; char = "…"; lc = "#1E3A5F"; dc = "rgba(0,0,0,0.48)"
+            else:
+                dot_bg = "#CBD5E0"; char = "·"; lc = "rgba(0,0,0,0.3)"; dc = "rgba(0,0,0,0.25)"
+
+            connector_style = (
+                "border-left:2px solid rgba(0,0,0,0.08);margin-left:13px;"
+                "padding-left:27px;padding-bottom:4px;"
+                if i < len(steps)-1 else "padding-left:41px;"
+            )
+            html += f"""
+<div style="display:flex;align-items:flex-start;gap:0;margin-bottom:0;">
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div style="width:26px;height:26px;border-radius:50%;background:{dot_bg};
+                display:flex;align-items:center;justify-content:center;
+                font-size:0.82rem;font-weight:800;color:white;flex-shrink:0;">{char}</div>
+    {"<div style=\'width:2px;flex:1;background:rgba(0,0,0,0.1);min-height:18px;\'></div>" if i < len(steps)-1 else ""}
+  </div>
+  <div style="padding:2px 0 16px 12px;">
+    <div style="font-weight:700;color:{lc};font-size:0.9rem;">{lbl}</div>
+    <div style="font-size:0.78rem;color:{dc};margin-top:1px;">{detail}</div>
+  </div>
+</div>"""
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
+
+    with risk_col:
+        st.markdown("#### Key Risks & Blockers")
+        st.markdown(
+            '''<div style="font-size:0.8rem;color:rgba(0,0,0,0.42);margin-top:-0.3rem;margin-bottom:0.9rem;">
+            Extracted directly from the tender analysis report — must be addressed in the bid submission
+            </div>''',
+            unsafe_allow_html=True,
+        )
+
+        _risk_lines = _re.findall(r"RISK:\s*(.+?)(?=\n|$)", tender_text)[:5]
+
+        def _classify_risk(t: str):
+            tl = t.lower()
+            if any(k in tl for k in ["ce mark", "certification", "class ii", "revenue", "experience"]):
+                return "🔴", "Blocking", "#E74C3C"
+            elif any(k in tl for k in ["reference", "hospital", "48h", "maintenance", "sla", "orbis"]):
+                return "🟡", "Caution", "#E67E22"
+            return "ℹ️", "Info", "#888888"
+
+        if _risk_lines:
+            for rline in _risk_lines:
+                icon, badge, color = _classify_risk(rline)
+                st.markdown(
+                    f"""<div style="border-left:4px solid {color};background:white;border-radius:8px;
+padding:10px 14px;margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,0.05);">
+  <div style="font-size:0.68rem;font-weight:700;color:{color};letter-spacing:0.07em;
+              text-transform:uppercase;margin-bottom:3px;">{icon} {badge}</div>
+  <div style="font-size:0.83rem;color:#1E3A5F;line-height:1.45;">{rline[:130]}</div>
+</div>""",
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("Run demo 1 to populate this panel.")
+
+        # Tender criteria radar — placed here below risks so it reads as analysis context
+        st.markdown("<div style='margin-top:1.2rem;'></div>", unsafe_allow_html=True)
+        st.markdown("#### How BrightEyes Scores on Tender Criteria")
+        st.markdown(
+            '''<div style="font-size:0.78rem;color:rgba(0,0,0,0.42);margin-top:-0.3rem;margin-bottom:0.5rem;">
+            Cyan = how much the hospital weighs each criterion (buyer's scoring key).
+            Dark blue = BrightEyes internal estimate of current capability on each axis.
+            The gap between the shapes shows where preparation effort is needed.
+            <em>Strength values are internal estimates, not guaranteed scores.</em>
+            </div>''',
+            unsafe_allow_html=True,
+        )
+        try:
+            import plotly.graph_objects as _go
+        except Exception:
+            st.warning("Plotly required.")
+        else:
+            cats = ["Technical\n(50%)", "Price\n(30%)", "Delivery\n(10%)", "After-Sales\n(10%)"]
+            w    = [50, 30, 10, 10]
+            s    = [40, 26,  8,  6]
+            rfig = _go.Figure()
+            rfig.add_trace(_go.Scatterpolar(
+                r=w+[w[0]], theta=cats+[cats[0]], fill="toself",
+                fillcolor="rgba(0,180,216,0.2)", line=dict(color="#00B4D8", width=2),
+                name="Tender weight (buyer scoring)",
+            ))
+            rfig.add_trace(_go.Scatterpolar(
+                r=s+[s[0]], theta=cats+[cats[0]], fill="toself",
+                fillcolor="rgba(30,58,95,0.2)", line=dict(color="#1E3A5F", width=2),
+                name="BrightEyes fit (estimate)",
+            ))
+            rfig.update_layout(
+                template="plotly_white", height=320,
+                margin=dict(l=20, r=20, t=20, b=50),
+                polar=dict(radialaxis=dict(visible=True, range=[0, 55])),
+                legend=dict(orientation="h", y=-0.18, xanchor="center", x=0.5, font=dict(size=10)),
+            )
+            st.plotly_chart(rfig, use_container_width=True)
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 2 — PROPOSAL GENERATION  (Demo 2)
+    # A private clinic expressed interest after a trade show. Demo 2 takes
+    # the sales rep\'s messy call notes and generates a polished proposal.
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
+    st.markdown(
+        """<div style="background:linear-gradient(90deg,#00788a 0%,#00a3ba 100%);
+border-radius:10px;padding:14px 20px;margin-bottom:1rem;">
+  <div style="color:white;font-weight:800;font-size:1.05rem;letter-spacing:0.01em;">
+    📝 Section 2 — Proposal Generation &nbsp;
+    <span style="font-size:0.78rem;font-weight:500;opacity:0.7;">Demo 2 · proposal_generator.py</span>
+  </div>
+  <div style="color:rgba(255,255,255,0.65);font-size:0.82rem;margin-top:3px;">
+    Dr. Rossi (Clinica Oculistica Milano) expressed interest at a trade show.
+    The AI transforms rough call notes into a professional commercial proposal with pricing, leasing, and timeline.
+  </div>
+</div>""",
+        unsafe_allow_html=True,
+    )
+
+    # ── Proposal scope toggle — only affects Section 2 ───────────────────────
+    st.markdown(
+        '''<div style="font-size:0.82rem;color:rgba(0,0,0,0.5);margin-bottom:0.4rem;">
+        <strong>Select proposal scope</strong> — Dr. Rossi expressed interest in a retinograph and OCT,
+        with possible autorefractors if the price is right. Choose below to see how pricing changes.
+        </div>''',
+        unsafe_allow_html=True,
+    )
     st.radio(
         "Proposal scope",
         ["Core bundle (RetinaScan + OCT)", "Full bundle (+ 2× AutoRef)"],
@@ -628,201 +831,138 @@ elif tab == "Commercial Automation":
     )
     toggle = st.session_state.get("proposal_toggle", "Core bundle (RetinaScan + OCT)")
 
+    # Pricing logic — list prices from company_context.md
+    # RetinaScan Pro €38,000 · OCT-3000 €62,000 · AutoRef 500 €12,000 each
+    # Bundle discount: 5% for 2 products, 8% for 3+ products
+    LEASING_MONTHS = 36
+    LEASING_RATE   = 0.028   # 2.8% monthly factor on financed amount (standard medical equipment lease)
+
     if toggle == "Full bundle (+ 2× AutoRef)":
-        # List prices: 38k + 62k + 2×12k = 124k → 8% bundle discount
-        LIST_PRICE      = 124_000.0
-        DISCOUNT_RATE   = 0.08
-        PROPOSAL_VALUE  = LIST_PRICE * (1 - DISCOUNT_RATE)   # = 114,080 → rounded to 114k
-        DISCOUNT_AMOUNT = LIST_PRICE - PROPOSAL_VALUE
-        SCOPE_LABEL     = "RetinaScan Pro + OCT-3000 + 2× AutoRef 500"
-        PRODUCTS_N      = 3
+        LIST_PRICE     = 124_000.0   # 38k + 62k + 2×12k
+        DISCOUNT_RATE  = 0.08
+        SCOPE_LABEL    = "RetinaScan Pro + OCT-3000 + 2× AutoRef 500"
+        LINE_ITEMS     = [
+            ("BrightEyes RetinaScan Pro", "€38,000", 1),
+            ("BrightEyes OCT-3000",       "€62,000", 1),
+            ("BrightEyes AutoRef 500",    "€12,000", 2),
+        ]
     else:
-        # List prices: 38k + 62k = 100k → 5% bundle discount
-        LIST_PRICE      = 100_000.0
-        DISCOUNT_RATE   = 0.05
-        PROPOSAL_VALUE  = LIST_PRICE * (1 - DISCOUNT_RATE)   # = 95,000
-        DISCOUNT_AMOUNT = LIST_PRICE - DISCOUNT_RATE * LIST_PRICE - PROPOSAL_VALUE + DISCOUNT_RATE * LIST_PRICE
-        # Simpler:
-        DISCOUNT_AMOUNT = LIST_PRICE * DISCOUNT_RATE          # = 5,000
-        SCOPE_LABEL     = "RetinaScan Pro + OCT-3000"
-        PRODUCTS_N      = 2
-
-    # Client budget ceiling: stated in call notes (Dr. Rossi said "around €150k").
-    # Note: the proposal (Demo 2) is for Dr. Rossi's private clinic; the tender (Demo 1)
-    # is a separate public procurement. They are shown together as two commercial automation
-    # demos. The budget comparison uses the Dr. Rossi figure (€150k) for the proposal gauge.
-    CLIENT_BUDGET_CEILING = 150_000.0
-    BUDGET_HEADROOM       = CLIENT_BUDGET_CEILING - PROPOSAL_VALUE
-
-    # ── Row 1 — 6 opportunity summary KPI cards ───────────────────────────────
-    def _opp_card(label: str, value: str, subtitle: str,
-                  border: str = "#00B4D8", val_color: str = "#1E3A5F") -> None:
-        st.markdown(
-            f"""<div style="border:1px solid rgba(0,0,0,0.07);border-top:4px solid {border};
-border-radius:12px;padding:16px 18px 14px;background:white;
-box-shadow:0 2px 12px rgba(0,0,0,0.06);height:100%;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;
-              text-transform:uppercase;color:rgba(0,0,0,0.4);margin-bottom:6px;">{label}</div>
-  <div style="font-size:1.45rem;font-weight:800;color:{val_color};line-height:1.1;">{value}</div>
-  <div style="font-size:0.78rem;color:rgba(0,0,0,0.42);margin-top:5px;">{subtitle}</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
-
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-    with c1:
-        _opp_card("Tender ID", TENDER_ID[-11:], "Public procurement ref.", border="#1E3A5F")
-    with c2:
-        _opp_card("Buyer / Client", TENDER_BUYER[:22] + ("…" if len(TENDER_BUYER) > 22 else ""),
-                  "Issuing institution", border="#1E3A5F")
-    with c3:
-        _opp_card("Budget Range", TENDER_BUDGET_TEXT[:24], "From tender conditions", border="#00B4D8")
-    with c4:
-        _opp_card("Go / No-Go", VERDICT, f"{RISK_COUNT} risk items identified",
-                  border=VERDICT_COLOR, val_color=VERDICT_COLOR)
-    with c5:
-        _opp_card("Proposal Value",
-                  f"€{PROPOSAL_VALUE:,.0f}",
-                  f"{SCOPE_LABEL} · {int(DISCOUNT_RATE*100)}% discount",
-                  border="#00B4D8")
-    with c6:
-        headroom_color = "#2ECC71" if BUDGET_HEADROOM >= 0 else "#E74C3C"
-        headroom_label = f"€{abs(BUDGET_HEADROOM):,.0f} {'below' if BUDGET_HEADROOM >= 0 else 'above'} ceiling"
-        _opp_card("Budget Headroom",
-                  headroom_label,
-                  f"vs. Dr. Rossi ceiling €{CLIENT_BUDGET_CEILING:,.0f}",
-                  border=headroom_color, val_color=headroom_color)
-
-    st.markdown("<div style='margin-top:1.25rem;'></div>", unsafe_allow_html=True)
-
-    # ── Row 2 — Workflow stepper + Risk panel ─────────────────────────────────
-    left_col, right_col = st.columns([3, 2])
-
-    with left_col:
-        st.markdown("### Workflow Progress")
-        st.markdown(
-            '<div style="font-size:0.82rem;color:rgba(0,0,0,0.45);margin-top:-0.4rem;margin-bottom:0.9rem;">'
-            "AI-assisted steps — status inferred from available output files"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        # Infer step completion from actual file contents
-        has_tender   = bool(tender_text)
-        has_verdict  = VERDICT != "—"
-        has_risks    = RISK_COUNT > 0
-        has_rec      = VERDICT in ("GO", "GO_WITH_RISKS", "NO_GO")
-        has_proposal = bool(proposal_text)
-        # Submission ready: bid is recommended AND no blocking NO_GO AND proposal exists
-        is_submission_ready = has_proposal and VERDICT != "NO_GO" and RISK_COUNT == 0
-
-        steps = [
-            ("Tender received",        has_tender,           "Demo 1 input file loaded"),
-            ("Eligibility checked",    has_verdict,          f"Verdict: {VERDICT}"),
-            ("Risks identified",       has_risks,            f"{RISK_COUNT} risk item(s) flagged"),
-            ("Bid recommendation",     has_rec,              "Go/No-Go decision made"),
-            ("Proposal generated",     has_proposal,         "Demo 2 output file exists"),
-            ("Submission ready",       is_submission_ready,  "No blockers → ready" if is_submission_ready else "Pending: resolve open risks"),
+        LIST_PRICE     = 100_000.0   # 38k + 62k
+        DISCOUNT_RATE  = 0.05
+        SCOPE_LABEL    = "RetinaScan Pro + OCT-3000"
+        LINE_ITEMS     = [
+            ("BrightEyes RetinaScan Pro", "€38,000", 1),
+            ("BrightEyes OCT-3000",       "€62,000", 1),
         ]
 
-        # Render as a vertical stepper using HTML
-        stepper_html = '<div style="position:relative;padding-left:12px;">'
-        for i, (label, done, detail) in enumerate(steps):
-            is_last = (i == len(steps) - 1)
-            if done:
-                dot_bg, dot_border, dot_char = "#2ECC71", "#2ECC71", "✓"
-                label_color, detail_color = "#1E3A5F", "rgba(0,0,0,0.5)"
-            elif not done and i > 0 and steps[i-1][1]:
-                # Previous step done but this one isn't → in progress / blocked
-                dot_bg, dot_border, dot_char = "#FFC300", "#FFC300", "…"
-                label_color, detail_color = "#1E3A5F", "rgba(0,0,0,0.5)"
-            else:
-                dot_bg, dot_border, dot_char = "white", "#CBD5E0", "○"
-                label_color, detail_color = "rgba(0,0,0,0.35)", "rgba(0,0,0,0.3)"
+    DISCOUNT_AMOUNT       = LIST_PRICE * DISCOUNT_RATE
+    PROPOSAL_VALUE        = LIST_PRICE - DISCOUNT_AMOUNT
+    CLIENT_BUDGET_CEILING = 150_000.0   # Dr. Rossi stated "around €150k", from call notes
+    BUDGET_HEADROOM       = CLIENT_BUDGET_CEILING - PROPOSAL_VALUE
+    MONTHLY_LEASE         = PROPOSAL_VALUE * LEASING_RATE   # simple flat monthly estimate
 
-            connector = (
-                "" if is_last else
-                '<div style="position:absolute;left:19px;top:0;width:2px;height:100%;'
-                'background:rgba(0,0,0,0.1);z-index:0;"></div>'
-            )
-            stepper_html += f"""
-<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;position:relative;">
-  <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;
-              background:{dot_bg};border:2px solid {dot_border};
-              display:flex;align-items:center;justify-content:center;
-              font-size:0.85rem;font-weight:700;color:white;z-index:1;">
-    {dot_char}
-  </div>
-  <div style="padding-top:3px;">
-    <div style="font-weight:700;color:{label_color};font-size:0.95rem;">{label}</div>
-    <div style="font-size:0.8rem;color:{detail_color};margin-top:2px;">{detail}</div>
-  </div>
-</div>"""
-        stepper_html += "</div>"
-        st.markdown(stepper_html, unsafe_allow_html=True)
-
-    with right_col:
-        st.markdown("### Key Risks & Blockers")
-        st.markdown(
-            '<div style="font-size:0.82rem;color:rgba(0,0,0,0.45);margin-top:-0.4rem;margin-bottom:0.9rem;">'
-            "Extracted from tender analysis — must be addressed before submission"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        # Extract up to 5 RISK lines from the tender report
-        _risk_lines = _re.findall(r"RISK:\s*(.+?)(?=\n|$)", tender_text)[:5]
-
-        # Classify each risk (heuristic: CE/certification → blocking; references/SLA → caution)
-        def _classify_risk(text: str) -> tuple[str, str, str]:
-            tl = text.lower()
-            if any(k in tl for k in ["ce mark", "certification", "class ii", "eligible", "revenue"]):
-                return "🔴", "Blocking", "#E74C3C"
-            elif any(k in tl for k in ["reference", "hospital", "48h", "maintenance", "sla"]):
-                return "🟡", "Caution", "#E67E22"
-            else:
-                return "ℹ️", "Info", "#888888"
-
-        if _risk_lines:
-            for rline in _risk_lines:
-                icon, badge, color = _classify_risk(rline)
-                st.markdown(
-                    f"""<div style="border-left:4px solid {color};background:white;
-border-radius:8px;padding:10px 14px;margin-bottom:8px;
-box-shadow:0 1px 6px rgba(0,0,0,0.05);">
-  <div style="font-size:0.72rem;font-weight:700;color:{color};letter-spacing:0.06em;
-              text-transform:uppercase;margin-bottom:3px;">{icon} {badge}</div>
-  <div style="font-size:0.85rem;color:#1E3A5F;line-height:1.45;">{rline[:120]}</div>
-</div>""",
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.info("Run demo 1 to extract risk items from the tender analysis.")
+    # Row 2a — Proposal KPI cards (all driven by toggle)
+    p1, p2, p3, p4 = st.columns(4)
+    with p1:
+        _card("Client", "Dr. Rossi", "Clinica Oculistica Milano", border="#00788a")
+    with p2:
+        _card("Proposal Value",
+              f"€{PROPOSAL_VALUE:,.0f}",
+              f"{int(DISCOUNT_RATE*100)}% bundle discount off €{LIST_PRICE:,.0f} list",
+              border="#00B4D8")
+    with p3:
+        h_color = "#2ECC71" if BUDGET_HEADROOM >= 0 else "#E74C3C"
+        h_label = f"€{abs(BUDGET_HEADROOM):,.0f} {'below' if BUDGET_HEADROOM >= 0 else 'above'}"
+        _card("Budget Headroom", h_label,
+              f"vs. stated ceiling €{CLIENT_BUDGET_CEILING:,.0f}",
+              border=h_color, val_color=h_color)
+    with p4:
+        _card("Est. Monthly Lease",
+              f"€{MONTHLY_LEASE:,.0f}/mo",
+              f"36-month indicative · {int(LEASING_RATE*100*10)/10}% monthly rate",
+              border="#00788a")
 
     st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
 
-    # ── Row 3 — Gauge + Radar ─────────────────────────────────────────────────
-    try:
-        import plotly.graph_objects as go
-    except Exception:
-        st.warning("Plotly is required. Install with `pip install plotly`.")
-    else:
-        gauge_col, radar_col = st.columns(2)
+    # Row 2b — Pricing breakdown table (left) + Gauge (right)
+    breakdown_col, gauge_col = st.columns([2, 3])
 
-        # ── Gauge: Proposal pricing fit against client budget ─────────────────
-        with gauge_col:
-            st.markdown("### Pricing Fit vs. Client Budget")
-            st.markdown(
-                '<div style="font-size:0.82rem;color:rgba(0,0,0,0.45);margin-top:-0.4rem;margin-bottom:0.6rem;">'
-                f"Single-opportunity view · {SCOPE_LABEL}"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-            gauge_max = CLIENT_BUDGET_CEILING * 1.25
+    with breakdown_col:
+        st.markdown("#### Pricing Breakdown")
+        st.markdown(
+            f'''<div style="font-size:0.8rem;color:rgba(0,0,0,0.42);margin-top:-0.3rem;margin-bottom:0.8rem;">
+            Scope: <strong>{SCOPE_LABEL}</strong>
+            </div>''',
+            unsafe_allow_html=True,
+        )
+        # Render line items as styled HTML table
+        rows_html = ""
+        for prod, price, qty in LINE_ITEMS:
+            rows_html += f"""<tr>
+  <td style="padding:7px 10px;color:#1E3A5F;font-size:0.85rem;">{prod}</td>
+  <td style="padding:7px 10px;text-align:center;color:rgba(0,0,0,0.5);font-size:0.82rem;">×{qty}</td>
+  <td style="padding:7px 10px;text-align:right;font-weight:600;color:#1E3A5F;font-size:0.85rem;">{price}</td>
+</tr>"""
 
-            # Delta label: "below budget ceiling" = positive headroom (good)
-            # "above budget ceiling" = negative (bad)
-            gauge_fig = go.Figure(go.Indicator(
+        st.markdown(
+            f"""<table style="width:100%;border-collapse:collapse;background:white;
+border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+  <thead>
+    <tr style="background:#1E3A5F;">
+      <th style="padding:9px 10px;text-align:left;color:white;font-size:0.78rem;
+                 letter-spacing:0.05em;text-transform:uppercase;">Product</th>
+      <th style="padding:9px 10px;text-align:center;color:white;font-size:0.78rem;">Qty</th>
+      <th style="padding:9px 10px;text-align:right;color:white;font-size:0.78rem;">List Price</th>
+    </tr>
+  </thead>
+  <tbody>{rows_html}</tbody>
+  <tfoot>
+    <tr style="background:rgba(0,0,0,0.03);border-top:2px solid rgba(0,0,0,0.1);">
+      <td colspan="2" style="padding:9px 10px;font-weight:700;color:#1E3A5F;font-size:0.85rem;">
+        Total list price</td>
+      <td style="padding:9px 10px;text-align:right;font-weight:700;color:#1E3A5F;">
+        €{LIST_PRICE:,.0f}</td>
+    </tr>
+    <tr style="background:rgba(0,180,216,0.06);">
+      <td colspan="2" style="padding:7px 10px;color:#00788a;font-size:0.82rem;">
+        Bundle discount ({int(DISCOUNT_RATE*100)}%)</td>
+      <td style="padding:7px 10px;text-align:right;color:#00788a;font-weight:600;">
+        − €{DISCOUNT_AMOUNT:,.0f}</td>
+    </tr>
+    <tr style="background:#1E3A5F;">
+      <td colspan="2" style="padding:10px 10px;font-weight:800;color:white;font-size:0.95rem;">
+        Proposal total</td>
+      <td style="padding:10px 10px;text-align:right;font-weight:800;color:#00B4D8;font-size:0.95rem;">
+        €{PROPOSAL_VALUE:,.0f}</td>
+    </tr>
+    <tr style="background:rgba(0,120,138,0.07);">
+      <td colspan="2" style="padding:8px 10px;color:#1E3A5F;font-size:0.82rem;">
+        36-month leasing estimate</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:700;color:#1E3A5F;font-size:0.85rem;">
+        €{MONTHLY_LEASE:,.0f}/mo</td>
+    </tr>
+  </tfoot>
+</table>""",
+            unsafe_allow_html=True,
+        )
+
+    with gauge_col:
+        st.markdown("#### Pricing Fit vs. Client Budget")
+        st.markdown(
+            '''<div style="font-size:0.8rem;color:rgba(0,0,0,0.42);margin-top:-0.3rem;margin-bottom:0.5rem;">
+            The needle shows the proposal value on a scale up to the client's stated maximum (€150k).
+            Green zone = comfortably within budget. Yellow = approaching ceiling. Red = over budget.
+            The red line marks the ceiling — staying below it improves win probability.
+            </div>''',
+            unsafe_allow_html=True,
+        )
+        try:
+            import plotly.graph_objects as _go2
+        except Exception:
+            st.warning("Plotly required.")
+        else:
+            gauge_max = 187_500.0  # 150k × 1.25
+            gfig = _go2.Figure(_go2.Indicator(
                 mode="gauge+number+delta",
                 value=PROPOSAL_VALUE,
                 number={"prefix": "€", "valueformat": ",.0f"},
@@ -831,113 +971,61 @@ box-shadow:0 1px 6px rgba(0,0,0,0.05);">
                     "relative": False,
                     "valueformat": ",.0f",
                     "prefix": "€",
-                    "suffix": " vs. budget ceiling",
-                    # negative delta = below ceiling = GOOD (inverse)
-                    "increasing": {"color": "#E74C3C"},
-                    "decreasing": {"color": "#2ECC71"},
+                    "suffix": " vs. ceiling",
+                    "increasing": {"color": "#E74C3C"},   # over budget = bad
+                    "decreasing": {"color": "#2ECC71"},   # under budget = good
                 },
-                title={"text": f"Proposal: €{PROPOSAL_VALUE:,.0f}<br>"
-                               f"<span style='font-size:0.8em;color:gray'>"
-                               f"List: €{LIST_PRICE:,.0f} · {int(DISCOUNT_RATE*100)}% bundle discount = "
-                               f"€{DISCOUNT_AMOUNT:,.0f} off list</span>"},
+                title={"text": f"Proposal total vs. Dr. Rossi budget ceiling<br>"
+                               f"<span style='font-size:0.78em;color:gray'>"
+                               f"List €{LIST_PRICE:,.0f} · {int(DISCOUNT_RATE*100)}% discount · "
+                               f"saving €{DISCOUNT_AMOUNT:,.0f} vs list</span>"},
                 gauge={
                     "axis": {"range": [0, gauge_max]},
-                    "bar": {"color": "#1E3A5F"},
+                    "bar": {"color": "#1E3A5F", "thickness": 0.25},
                     "steps": [
-                        {"range": [0, CLIENT_BUDGET_CEILING * 0.80], "color": "rgba(46,204,113,0.2)"},
-                        {"range": [CLIENT_BUDGET_CEILING * 0.80, CLIENT_BUDGET_CEILING], "color": "rgba(255,195,0,0.2)"},
-                        {"range": [CLIENT_BUDGET_CEILING, gauge_max], "color": "rgba(231,76,60,0.18)"},
+                        {"range": [0,          120_000], "color": "rgba(46,204,113,0.18)"},
+                        {"range": [120_000, 150_000], "color": "rgba(255,195,0,0.18)"},
+                        {"range": [150_000, gauge_max], "color": "rgba(231,76,60,0.15)"},
                     ],
-                    "threshold": {
-                        "line": {"color": "#E74C3C", "width": 3},
-                        "value": CLIENT_BUDGET_CEILING,
-                    },
+                    "threshold": {"line": {"color": "#E74C3C", "width": 3},
+                                  "value": CLIENT_BUDGET_CEILING},
                 },
             ))
-            gauge_fig.update_layout(
-                template="plotly_white",
-                height=380,
-                margin=dict(l=20, r=20, t=90, b=20),
+            gfig.update_layout(
+                template="plotly_white", height=360,
+                margin=dict(l=20, r=20, t=100, b=40),
             )
-            gauge_fig.add_annotation(
-                x=0.5, y=0.0, xref="paper", yref="paper", showarrow=False,
-                text=f"Budget headroom: €{BUDGET_HEADROOM:,.0f} below client ceiling",
-                font=dict(color="rgba(0,0,0,0.55)", size=12),
+            gfig.add_annotation(
+                x=0.5, y=-0.05, xref="paper", yref="paper", showarrow=False,
+                text=f"Budget headroom: €{abs(BUDGET_HEADROOM):,.0f} "
+                     f"{'below ceiling ✓' if BUDGET_HEADROOM >= 0 else 'OVER ceiling ✗'}  ·  "
+                     f"Monthly lease: €{MONTHLY_LEASE:,.0f}/mo over 36 months",
+                font=dict(color="rgba(0,0,0,0.55)", size=11),
             )
-            st.plotly_chart(gauge_fig, use_container_width=True)
+            st.plotly_chart(gfig, use_container_width=True)
 
-        # ── Radar: Tender criteria weight vs. BrightEyes estimated fit ────────
-        with radar_col:
-            st.markdown("### Tender Criteria Fit")
-            st.markdown(
-                '<div style="font-size:0.82rem;color:rgba(0,0,0,0.45);margin-top:-0.4rem;margin-bottom:0.6rem;">'
-                "Tender weight (what the buyer scores) vs. BrightEyes estimated capability<br>"
-                "<em>Strength values are internal estimates — not guaranteed scores</em>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            # Criteria and weights sourced directly from the tender document (Demo 1 input).
-            # Section 4 of tender_hospital_milan.md: Technical 50%, Price 30%, Delivery 10%, After-Sales 10%.
-            # BrightEyes estimated strength (heuristic, normalized to same 0–50 scale):
-            #   Technical: 40/50 — strong specs, minor integration gap (Dedalus ORBIS)
-            #   Price:     26/30 — proposal is within budget, some room
-            #   Delivery:   8/10 — 12-week timeline is tight but feasible
-            #   After-Sales: 6/10 — 48h SLA not formally evidenced yet
-            categories = ["Technical (50%)", "Price (30%)", "Delivery (10%)", "After-Sales (10%)"]
-            tender_weight_vals = [50, 30, 10, 10]
-            estimated_strength = [40, 26, 8, 6]
-
-            radar_fig = go.Figure()
-            radar_fig.add_trace(go.Scatterpolar(
-                r=tender_weight_vals + [tender_weight_vals[0]],
-                theta=categories + [categories[0]],
-                fill="toself",
-                fillcolor="rgba(0,180,216,0.25)",
-                line=dict(color="#00B4D8", width=2.5),
-                name="Tender weight (buyer scoring)",
-            ))
-            radar_fig.add_trace(go.Scatterpolar(
-                r=estimated_strength + [estimated_strength[0]],
-                theta=categories + [categories[0]],
-                fill="toself",
-                fillcolor="rgba(30,58,95,0.25)",
-                line=dict(color="#1E3A5F", width=2.5),
-                name="BrightEyes estimated fit (internal)",
-            ))
-            radar_fig.update_layout(
-                template="plotly_white",
-                height=380,
-                margin=dict(l=30, r=30, t=30, b=30),
-                polar=dict(radialaxis=dict(visible=True, range=[0, 55])),
-                legend=dict(orientation="h", yanchor="top", y=-0.08, xanchor="center", x=0.5),
-            )
-            st.plotly_chart(radar_fig, use_container_width=True)
-
-    # ── Row 4 — Generated output previews ────────────────────────────────────
-    st.markdown("### Generated Outputs")
+    # ── Row 3 — Generated output previews ────────────────────────────────────
+    st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
+    st.markdown("### 📂 Full Generated Reports")
     st.markdown(
-        '<div style="font-size:0.82rem;color:rgba(0,0,0,0.45);margin-bottom:0.75rem;">'
-        "Full AI-generated reports from Demo 1 (tender analysis) and Demo 2 (proposal)"
-        "</div>",
+        '''<div style="font-size:0.82rem;color:rgba(0,0,0,0.45);margin-bottom:0.75rem;">
+        The actual AI-generated output files — this is what the automation produced
+        </div>''',
         unsafe_allow_html=True,
     )
-
-    out_tab1, out_tab2 = st.tabs(["📄 Tender Analysis (Demo 1)", "📝 Client Proposal (Demo 2)"])
-
-    with out_tab1:
+    out_t1, out_t2 = st.tabs(["📄 Tender Analysis — Demo 1", "📝 Client Proposal — Demo 2"])
+    with out_t1:
         if tender_text:
             st.markdown(tender_text)
         else:
             st.warning("Run `python3 demo1_tender/tender_parser.py` to generate this report.")
-
-    with out_tab2:
+    with out_t2:
         if proposal_text:
             st.markdown(proposal_text)
         else:
             st.warning("Run `python3 demo2_proposal/proposal_generator.py` to generate this report.")
 
-elif tab == "Installation Intelligence":
+elif tab == "Installations":
     st.markdown("## Installation Intelligence")
 
     install_path = Path(__file__).parent / "demo4_installation/output/installation_data_verdi.json"
@@ -1238,7 +1326,7 @@ elif tab == "Installation Intelligence":
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
-elif tab == "Supplier Intelligence":
+elif tab == "Supply Chain":
     st.markdown("## Supply Chain — Supplier Risk & Spend")
 
     def _eur(x: float) -> str:
@@ -1463,7 +1551,7 @@ elif tab == "Supplier Intelligence":
                         df_f.sort_values(["supplier", "date"]),
                         use_container_width=True,
                     )
-elif tab == "Weekly Business Review":
+elif tab == "Weekly Report":
     st.markdown("## Weekly Business Review — W1 to W12")
 
     wbr = read_csv_or_warn(demo_n=5, rel_path="demo5_wbr/data/weekly_metrics.csv")
